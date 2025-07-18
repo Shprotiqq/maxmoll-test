@@ -9,14 +9,13 @@ return new class extends Migration {
     {
         Schema::create('order_items', function (Blueprint $table) {
             $table->unsignedBigInteger('id', true);
-            $table->unsignedBigInteger('order_id');
-            $table->unsignedBigInteger('product_id');
             $table->integer('count');
             $table->foreignId('order_id')
                 ->constrained('orders')
                 ->cascadeOnDelete();
             $table->foreignId('product_id')
-                ->constrained('products');
+                ->constrained('products')
+                ->restrictOnDelete();
         });
     }
 

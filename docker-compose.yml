@@ -1,0 +1,75 @@
+services:
+  nginx:
+    build:
+      context: ./docker/dockerfiles
+      dockerfile: nginx.dockerfile
+      args:
+        - UID=${UID:-1000}
+        - GID=${GID:-1000}
+    container_name: ${APP_NAME}_nginx
+    expose:
+      - "80/tcp"
+    ports:
+      - "8000:80"
+    volumes:
+      - ./docker/configs/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./:/var/www/html:delegated
+    depends_on:
+      - php
+      - mariadb
+    networks:
+      - maxmoll_test
+
+  php:
+    build:
+      context: ./docker/dockerfiles
+      dockerfile: php.dockerfile
+      args:
+        - UID=${UID:-1000}
+        - GID=${GID:-1000}
+    container_name: ${APP_NAME}_php
+    volumes:
+      - ./docker/configs/php/xdebug.ini:/usr/local/etc/php/conf.d/xdebug.ini:ro
+      - ./:/var/www/html:delegated
+    networks:
+      - maxmoll_test
+
+  mariadb:
+    image: mariadb:11.1.2
+    container_name: ${APP_NAME}_mariadb
+    restart: unless-stopped
+    tty: true
+    expose:
+      - "3306/tcp"
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./docker/database:/var/lib/mysql
+    environment:
+      - MARIADB_USER=${DB_USERNAME}
+      - MARIADB_PASSWORD=${DB_PASSWORD}
+      - MARIADB_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MARIADB_DATABASE=${DB_DATABASE}
+    depends_on:
+      -   phpmyadmin
+    networks:
+      - maxmoll_test
+
+  phpmyadmin:
+    image: phpmyadmin:5
+    container_name: ${APP_NAME}_phpmyadmin
+    restart: always
+    expose:
+      - "80/tcp"
+    ports:
+      - "8080:80"
+    environment:
+      - PMA_HOST=${DB_HOST}
+      - UPLOAD_LIMIT=1024M
+    networks:
+      - maxmoll_test
+
+networks:
+  maxmoll_test:
+    name: maxmoll_test
+    driver: bridge

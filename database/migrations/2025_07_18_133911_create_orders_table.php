@@ -14,11 +14,11 @@ return new class extends Migration {
                 ->useCurrent();
             $table->timestamp('completed_at')
                 ->nullable();
-            $table->unsignedBigInteger('warehouse_id');
+            $table->foreignId('warehouse_id')
+                ->constrained('warehouses')
+                ->restrictOnDelete();
             $table->string('status', 255)
                 ->default('active');
-            $table->foreignId('warehouse_id')
-                ->constrained('warehouses');
         });
     }
 
