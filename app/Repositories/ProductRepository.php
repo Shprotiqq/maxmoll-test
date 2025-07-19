@@ -7,12 +7,12 @@ use App\Models\Product;
 use App\Repositories\Interfaces\ProductRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-class ProductRepository implements Interfaces\ProductRepositoryInterface
+class ProductRepository implements ProductRepositoryInterface
 {
 
     public function getProductsWithStocks(int $perPage = 10, array $filters = []): LengthAwarePaginator
     {
-        $query - Product::with(['stocks:product_id,warehouse, stock']);
+        $query = Product::with(['stocks:product_id,warehouse, stock']);
 
         if (!empty($filters['name'])) {
             $query->where('name', 'like', '%' . $filters['name'] . '%');
