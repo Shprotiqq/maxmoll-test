@@ -18,8 +18,7 @@ class OrderService
 {
     public function __construct(
         private OrderRepositoryInterface $orderRepository,
-    )
-    {
+    ) {
     }
 
     public function getOrders(int $perPage = 10, array $filter = []): LengthAwarePaginator
@@ -32,48 +31,47 @@ class OrderService
     public function createOrder(CreateOrderDTO $dto): OrderDTO
     {
         return DB::transaction(function () use ($dto) {
-           $order = Order::query()->create([
-               'customer' => $dto->customer,
-               'warehouse_id' => $dto->warehouse_id,
-               'status' => OrderStatus::ACTIVE->value,
-               'created_at' => now(),
-           ]);
+            $order = Order::query()->create([
+                'customer' => $dto->customer,
+                'warehouse_id' => $dto->warehouse_id,
+                'status' => OrderStatus::ACTIVE->value,
+                'created_at' => now(),
+            ]);
 
-           foreach ($dto->items as $item) {
-               $this->addOrderItem($order, $item['product_id'], $item['count']);
-           }
+            foreach ($dto->items as $item) {
+                $this->addOrderItem($order, $item['product_id'], $item['count']);
+            }
 
-           return $this->orderToDTO($order);
+            return $this->orderToDTO($order);
         });
     }
 
     public function updateOrder(int $orderId, UpdateOrderDTO $dto): OrderDTO
     {
         return DB::transaction(function () use ($orderId, $dto) {
-           $order = Order::query()->findOrFail($orderId);
+            $order = Order::query()->findOrFail($orderId);
 
-           if ($order->status !== OrderStatus::ACTIVE->value) {
-               throw new \Exception('Можно обновлять только активные заказы');
-           }
+            if ($order->status !== OrderStatus::ACTIVE->value) {
+                throw new \Exception('Можно обновлять только активные заказы');
+            }
 
-           if ($dto->customer !== null) {
-               $order->customer = $dto->customer;
-           }
+            if ($dto->customer !== null) {
+                $order->customer = $dto->customer;
+            }
 
-           if ($dto->warehouse_id !== null) {
-               $order->warehouse_id = $dto->warehouse_id;
-           }
+            if ($dto->warehouse_id !== null) {
+                $order->warehouse_id = $dto->warehouse_id;
+            }
 
-           $order->save();
+            $order->save();
 
-           if ($dto->items !== null) {
-               $this->updateOrderItems($order, $dto->items);
-           }
+            if ($dto->items !== null) {
+                $this->updateOrderItems($order, $dto->items);
+            }
 
-           return $this->orderToDTO($order);
+            return $this->orderToDTO($order);
         });
     }
-
 
 
     private function addOrderItem(Order $order, int $productId, int $count): void
@@ -88,9 +86,9 @@ class OrderService
         }
 
         OrderItem::query()->create([
-           'order_id' => $order->id,
-           'product_id' => $productId,
-           'count' => $count,
+            'order_id' => $order->id,
+            'product_id' => $productId,
+            'count' => $count,
         ]);
 
         $stock->decrement('stock', $count);
@@ -169,7 +167,7 @@ class OrderService
             $this->returnItemsToStock($order);
 
             $order->update([
-               'status' => OrderStatus::CANCELLED->value,
+                'status' => OrderStatus::CANCELLED->value,
             ]);
 
             return $this->orderToDTO($order);
@@ -183,6 +181,54 @@ class OrderService
                 ->where('product_id', $item->product_id)
                 ->where('warehouse_id', $item->warehouse_id)
                 ->increment('stock', $item->count);
+        }
+    }
+
+    public function resumeOrder(int $orderId): OrderDTO
+    {
+        return DB::transaction(function () use ($orderId) {
+            $order = Order::query()
+                ->with('items')
+                ->findOrFail($orderId);
+
+            if ($order->status !== OrderStatus::CANCELLED->value) {
+                throw new \Exception('Можно возобновить только отмененный заказ');
+            }
+
+            $this->checkItemsAvailability($order);
+
+            $this->reserveItems($order);
+
+            $order->update([
+                'status' => OrderStatus::ACTIVE->value,
+                'completed_at' => null,
+            ]);
+
+            return $this->orderToDTO($order);
+        });
+    }
+
+    private function checkItemsAvailability(Order $order): void
+    {
+        foreach ($order->items as $item) {
+            $stock = Stock::query()
+                ->where('product_id', $item->product_id)
+                ->where('warehouse_id', $item->warehouse_id)
+                ->first();
+
+            if (!$stock || $stock->count < $item->count) {
+                throw new \Exception('Недостаточно товара {$item->product_id} на складе для возобновления заказа');
+            }
+        }
+    }
+
+    private function reserveItems(Order $order): void
+    {
+        foreach ($order->items as $item) {
+            Stock::query()
+                ->where('product_id', $item->product_id)
+                ->where('warehouse_id', $item->warehouse_id)
+                ->decrement('stock', $item->count);
         }
     }
 }
