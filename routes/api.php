@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CompleteOrderController;
 use App\Http\Controllers\Api\CreateOrderController;
 use App\Http\Controllers\Api\OrderController;
 use App\Http\Controllers\Api\ProductController;
@@ -12,3 +13,4 @@ Route::get('/products', ProductController::class);
 Route::get('/orders', OrderController::class);
 Route::post('/orders', CreateOrderController::class);
 Route::put('/orders/{order}', UpdateOrderController::class);
+Route::patch('orders/{order}/complete', CompleteOrderController::class);

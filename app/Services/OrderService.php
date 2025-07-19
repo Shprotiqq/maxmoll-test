@@ -138,4 +138,22 @@ class OrderService
             $this->addOrderItem($order, $item['product_id'], $item['count']);
         }
     }
+
+    public function completeOrder(int $orderId): orderDTO
+    {
+        return DB::transaction(function () use ($orderId) {
+            $order = Order::query()->findOrFail($orderId);
+
+            if ($order->status !== OrderStatus::ACTIVE->value) {
+                throw new \Exception('Можно завершить только активные заказы');
+            }
+
+            $order->update([
+                'status' => OrderStatus::COMPLETED->value,
+                'completed_at' => now(),
+            ]);
+
+            return $this->orderToDTO($order);
+        });
+    }
 }

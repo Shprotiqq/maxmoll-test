@@ -2,7 +2,7 @@
 
 namespace App\DTOs;
 
-class UpdateOrderDTO
+readonly class UpdateOrderDTO
 {
     public function __construct(
         public ?string $customer,
