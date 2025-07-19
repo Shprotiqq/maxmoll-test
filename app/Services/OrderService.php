@@ -7,6 +7,7 @@ use App\DTOs\OrderDTO;
 use App\DTOs\OrderItemDTO;
 use App\DTOs\UpdateOrderDTO;
 use App\Enums\OrderStatus;
+use App\Enums\StockOperationType;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Stock;
@@ -91,6 +92,8 @@ class OrderService
             'count' => $count,
         ]);
 
+        $stock->operation_type = StockOperationType::ORDER_CREATED->value;
+        $stock->operation_id = $order->id;
         $stock->decrement('stock', $count);
     }
 
@@ -124,10 +127,16 @@ class OrderService
         $currentItems = $order->items()->get();
 
         foreach ($currentItems as $item) {
-            Stock::query()
+            $stock = Stock::query()
                 ->where('product_id', $item->product_id)
                 ->where('warehouse_id', $item->warehouse_id)
-                ->increment('count', $item->count);
+                ->first();
+        }
+
+        if ($stock) {
+            $stock->operation_type = StockOperationType::ORDER_CANCELED->value;
+            $stock->operation_id = $order->id;
+            $stock->increment('stock', $item->count);
         }
 
         $order->items()->delete();
@@ -177,10 +186,16 @@ class OrderService
     private function returnItemsToStock(Order $order): void
     {
         foreach ($order->items as $item) {
-            Stock::query()
+            $stock = Stock::query()
                 ->where('product_id', $item->product_id)
                 ->where('warehouse_id', $item->warehouse_id)
-                ->increment('stock', $item->count);
+                ->first();
+
+            if ($stock) {
+                $stock->operation_type = StockOperationType::ORDER_CANCELED->value;
+                $stock->operation_id = $order->id;
+                $stock->increment('stock', $item->count);
+            }
         }
     }
 
@@ -225,10 +240,16 @@ class OrderService
     private function reserveItems(Order $order): void
     {
         foreach ($order->items as $item) {
-            Stock::query()
+            $stock = Stock::query()
                 ->where('product_id', $item->product_id)
                 ->where('warehouse_id', $item->warehouse_id)
-                ->decrement('stock', $item->count);
+                ->first();
+
+            if ($stock) {
+                $stock->operation_type = StockOperationType::ORDER_RESUMED->value;
+                $stock->operation_id = $item->id;
+                $stock->decrement('stock', $item->count);
+            }
         }
     }
 }
