@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\CancelOrderController;
 use App\Http\Controllers\Api\CompleteOrderController;
 use App\Http\Controllers\Api\CreateOrderController;
 use App\Http\Controllers\Api\OrderController;
@@ -14,3 +15,4 @@ Route::get('/orders', OrderController::class);
 Route::post('/orders', CreateOrderController::class);
 Route::put('/orders/{order}', UpdateOrderController::class);
 Route::patch('orders/{order}/complete', CompleteOrderController::class);
+Route::patch('/orders/{order}/cancel', CancelOrderController::class);

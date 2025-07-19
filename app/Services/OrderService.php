@@ -156,4 +156,33 @@ class OrderService
             return $this->orderToDTO($order);
         });
     }
+
+    public function cancelOrder(int $orderId): OrderDTO
+    {
+        return DB::transaction(function () use ($orderId) {
+            $order = Order::with('items')->findOrFail($orderId);
+
+            if ($order->status !== OrderStatus::ACTIVE->value) {
+                throw new \Exception('Можно отменить только активные заказы');
+            }
+
+            $this->returnItemsToStock($order);
+
+            $order->update([
+               'status' => OrderStatus::CANCELLED->value,
+            ]);
+
+            return $this->orderToDTO($order);
+        });
+    }
+
+    private function returnItemsToStock(Order $order): void
+    {
+        foreach ($order->items as $item) {
+            Stock::query()
+                ->where('product_id', $item->product_id)
+                ->where('warehouse_id', $item->warehouse_id)
+                ->increment('stock', $item->count);
+        }
+    }
 }
