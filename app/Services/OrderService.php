@@ -5,6 +5,7 @@ namespace App\Services;
 use App\DTOs\CreateOrderDTO;
 use App\DTOs\OrderDTO;
 use App\DTOs\OrderItemDTO;
+use App\DTOs\UpdateOrderDTO;
 use App\Enums\OrderStatus;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -45,6 +46,35 @@ class OrderService
            return $this->orderToDTO($order);
         });
     }
+
+    public function updateOrder(int $orderId, UpdateOrderDTO $dto): OrderDTO
+    {
+        return DB::transaction(function () use ($orderId, $dto) {
+           $order = Order::query()->findOrFail($orderId);
+
+           if ($order->status !== OrderStatus::ACTIVE->value) {
+               throw new \Exception('Можно обновлять только активные заказы');
+           }
+
+           if ($dto->customer !== null) {
+               $order->customer = $dto->customer;
+           }
+
+           if ($dto->warehouse_id !== null) {
+               $order->warehouse_id = $dto->warehouse_id;
+           }
+
+           $order->save();
+
+           if ($dto->items !== null) {
+               $this->updateOrderItems($order, $dto->items);
+           }
+
+           return $this->orderToDTO($order);
+        });
+    }
+
+
 
     private function addOrderItem(Order $order, int $productId, int $count): void
     {
@@ -89,5 +119,23 @@ class OrderService
             status: $order->status,
             items: $items,
         );
+    }
+
+    private function updateOrderItems(Order $order, array $newItems): void
+    {
+        $currentItems = $order->items()->get();
+
+        foreach ($currentItems as $item) {
+            Stock::query()
+                ->where('product_id', $item->product_id)
+                ->where('warehouse_id', $item->warehouse_id)
+                ->increment('count', $item->count);
+        }
+
+        $order->items()->delete();
+
+        foreach ($newItems as $item) {
+            $this->addOrderItem($order, $item['product_id'], $item['count']);
+        }
     }
 }

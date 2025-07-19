@@ -17,7 +17,7 @@ class GetOrdersRequest extends FormRequest
         return [
             'per_page' => 'sometimes|integer|min:1|max:100',
             'status' => 'sometimes|string|in:active,completed,cancelled',
-            'customer' => 'sometimes|string|exists:customers|max:255',
+            'customer' => 'sometimes|string|max:255',
             'warehouse_id' => 'sometimes|int|exists:warehouses|max:255',
             'date_from' => 'sometimes|date',
             'date_to' => 'sometimes|date|after_or_equal:date_from',
@@ -29,7 +29,6 @@ class GetOrdersRequest extends FormRequest
         return [
           'status.in' => 'Указанного статуса не существует',
           'warehouse_id.exists' => 'Указанный склад не существует',
-          'customer.exists' => 'Указанный покупатель не существует',
           'date_to.after_or_equal' => 'Конечная дата должна быть позже или равна начальной'
         ];
     }
