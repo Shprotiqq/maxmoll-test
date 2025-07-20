@@ -6,14 +6,14 @@ use App\Enums\StockOperationType;
 use App\Models\Stock;
 use App\Models\StockMovement;
 
-class StockObserver
+final class StockObserver
 {
     public function created(Stock $stock): void
     {
         $this->recordMovement(
             stock: $stock,
             amount: $stock->stock,
-            operationType: 'Первоначальный остаток',
+            operationType: StockOperationType::INITIAL->value,
             notes: 'Первоначальный остаток',
         );
     }
@@ -42,22 +42,6 @@ class StockObserver
         );
     }
 
-
-
-    public function deleted(Stock $stock): void
-    {
-
-    }
-
-    public function restored(Stock $stock): void
-    {
-
-    }
-
-    public function forceDeleted(Stock $stock): void
-    {
-
-    }
 
     private function recordMovement(Stock $stock, int $amount, string $operationType, ?string $notes = null): void
     {

@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Http\Requests\Order;
+
+use Illuminate\Foundation\Http\FormRequest;
+
+final class UpdateOrderRequest extends FormRequest
+{
+    public function authorize(): bool
+    {
+        return true;
+    }
+
+    public function rules(): array
+    {
+        return [
+            'customer' => 'sometimes|string|max:255',
+            'warehouse_id' => 'sometimes|exists:warehouses,id',
+            'items' => 'sometimes|array|min:1',
+            'items.*.product_id' => 'sometimes|int|exists:products,id',
+            'items.*.count' => 'required_with:items|int|min:1',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+          'items.min' => 'Заказ должен содержать хотя бы одну позицию',
+          'items.*.count.min' => 'Количество товара должно быть не менее 1',
+        ];
+    }
+}

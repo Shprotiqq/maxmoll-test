@@ -60,7 +60,7 @@ class SeedTestData extends Command
         foreach ($warehouses as $warehouse) {
             foreach ($products as $product) {
                 $stock = Stock::query()
-                    ->create([
+                    ->firstOrCreate([
                        'product_id' => $product->id,
                        'warehouse_id' => $warehouse->id,
                        'stock' => rand(0, 100)

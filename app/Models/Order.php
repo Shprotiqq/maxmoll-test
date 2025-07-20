@@ -15,6 +15,8 @@ class Order extends Model
         'customer',
         'warehouse_id',
         'status',
+        'created_at',
+        'completed_at',
     ];
 
     protected $casts = [
@@ -22,6 +24,8 @@ class Order extends Model
         'created_at' => 'datetime',
         'completed_at' => 'datetime',
     ];
+
+    public $timestamps = false;
 
     public function warehouse(): BelongsTo
     {

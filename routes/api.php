@@ -1,20 +1,30 @@
 <?php
 
-use App\Http\Controllers\Api\CancelOrderController;
-use App\Http\Controllers\Api\CompleteOrderController;
-use App\Http\Controllers\Api\CreateOrderController;
-use App\Http\Controllers\Api\OrderController;
-use App\Http\Controllers\Api\ProductController;
-use App\Http\Controllers\Api\ResumeOrderController;
-use App\Http\Controllers\Api\UpdateOrderController;
+use App\Http\Controllers\Api\Order\CancelOrderController;
+use App\Http\Controllers\Api\Order\CompleteOrderController;
+use App\Http\Controllers\Api\Order\CreateOrderController;
+use App\Http\Controllers\Api\Order\IndexOrderController;
+use App\Http\Controllers\Api\Order\ResumeOrderController;
+use App\Http\Controllers\Api\Order\UpdateOrderController;
+use App\Http\Controllers\Api\Product\IndexProductController;
+use App\Http\Controllers\Api\Warehouse\IndexWarehouseController;
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\Api\WarehouseController;
 
-Route::get('/warehouses', WarehouseController::class);
-Route::get('/products', ProductController::class);
-Route::get('/orders', OrderController::class);
-Route::post('/orders', CreateOrderController::class);
-Route::put('/orders/{order}', UpdateOrderController::class);
-Route::patch('orders/{order}/complete', CompleteOrderController::class);
-Route::patch('/orders/{order}/cancel', CancelOrderController::class);
-Route::patch('orders/{order}/resume', ResumeOrderController::class);
+
+Route::prefix('orders')->group(function () {
+    Route::get('/', IndexOrderController::class);
+    Route::post('/', CreateOrderController::class);
+    Route::put('/{orderId}', UpdateOrderController::class);
+    Route::patch('/{orderId}/complete', CompleteOrderController::class);
+    Route::patch('/{orderId}/cancel', CancelOrderController::class);
+    Route::patch('/{orderId}/resume', ResumeOrderController::class);
+});
+
+Route::prefix('products')->group(function () {
+    Route::get('/', IndexProductController::class);
+});
+
+Route::prefix('warehouses')->group(function () {
+    Route::get('/', IndexWarehouseController::class);
+});
+
