@@ -7,7 +7,7 @@ use App\DTOs\FiltersDTO;
 use App\Repositories\Interfaces\Product\ProductRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-final class ProductService implements ProductServiceInterface
+final readonly class ProductService implements ProductServiceInterface
 {
     public function __construct(
         private ProductRepositoryInterface $productRepository

@@ -7,7 +7,7 @@ use App\DTOs\Product\ProductStockDTO;
 use App\Models\Product;
 use App\Models\Stock;
 use App\Repositories\Interfaces\Product\ProductRepositoryInterface;
-use Illuminate\Database\Query\Builder;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 

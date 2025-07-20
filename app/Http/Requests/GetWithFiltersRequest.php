@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Http\Requests\Product;
+namespace App\Http\Requests;
 
 use App\DTOs\FiltersDTO;
 use Illuminate\Foundation\Http\FormRequest;
 
-final class GetProductsRequest extends FormRequest
+class GetWithFiltersRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -33,8 +33,8 @@ final class GetProductsRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-           'per_page' => $this->input('perPage', FiltersDTO::DEFAULT_PER_PAGE),
-           'filters' => $this->input('filters', []),
+            'per_page' => $this->input('perPage', FiltersDTO::DEFAULT_PER_PAGE),
+            'filters' => $this->input('filters', []),
         ]);
     }
 

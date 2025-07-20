@@ -2,21 +2,24 @@
 
 namespace App\Repositories\Warehouse;
 
+use App\DTOs\FiltersDTO;
 use App\DTOs\Warehouse\WarehouseStockDTO;
 use App\Models\Warehouse;
 use App\Repositories\Interfaces;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 final class WarehouseRepository implements Interfaces\Warehouse\WarehouseRepositoryInterface
 {
-    public function getWarehousesWithStockInfo(int $perPage = 10, array $filters = []): LengthAwarePaginator
+    public function getWarehousesWithStockInfo(FiltersDTO $dto): LengthAwarePaginator
     {
-        $query = Warehouse::with(['stocks.product:id,name']);
+        $query = Warehouse::query()
+            ->with(['stocks.product:id,name']);
 
-        $this->applyFilters($query, $filters);
+        $this->applyFilters($query, $dto);
 
-        $warehouses = $query->paginate($perPage);
+        $warehouses = $query->paginate($dto->perPage);
 
         $warehouses->setCollection(
             $this->transformToWarehouseStockDTO($warehouses->getCollection())
@@ -25,10 +28,10 @@ final class WarehouseRepository implements Interfaces\Warehouse\WarehouseReposit
         return $warehouses;
     }
 
-    private function applyFilters($query, array $filters): void
+    private function applyFilters(Builder $query, FiltersDTO $dto): void
     {
-        if (!empty($filters['name'])) {
-            $query->where('name', 'like', '%' . $filters['name'] . '%');
+        if (!empty($dto->filters['name'])) {
+            $query->where('name', 'like', '%' . $dto->filters['name'] . '%');
         }
     }
 
