@@ -11,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 
 final class CreateOrderController extends Controller
 {
-    public function __invoke(CreateOrderRequest $request, OrderServiceInterface $orderService): JsonResponse
+    public function createOrder(CreateOrderRequest $request, OrderServiceInterface $orderService): JsonResponse
     {
         try {
             $dto = new CreateOrderDTO(

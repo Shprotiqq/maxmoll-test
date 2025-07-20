@@ -10,8 +10,7 @@ use Illuminate\Http\JsonResponse;
 
 final class CancelOrderController extends Controller
 {
-
-    public function __invoke(
+    public function cancelOrder(
         CancelOrderRequest $request,
         OrderServiceInterface $orderService,
         int $orderId

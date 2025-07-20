@@ -115,7 +115,6 @@ final class OrderService implements OrderServiceInterface
                 ->first();
         }
 
-
         if ($stock) {
             $stock->operation_type = StockOperationType::ORDER_CANCELED->value;
             $stock->operation_id = $order->id;
@@ -209,7 +208,9 @@ final class OrderService implements OrderServiceInterface
                 ->first();
 
             if (!$stock || $stock->count < $item->count) {
-                throw new Exception("Недостаточно товара {$item->product_id} на складе {$order->warehouse_id} для возобновления заказа");
+                throw new Exception(
+                    "Недостаточно товара {$item->product_id} на складе {$order->warehouse_id} для возобновления заказа"
+                );
             }
         }
     }

@@ -9,14 +9,9 @@ use Illuminate\Http\JsonResponse;
 
 final class IndexProductController extends Controller
 {
-    public function __invoke(GetProductsRequest $request, ProductServiceInterface $productService): JsonResponse
+    public function getProducts(GetProductsRequest $request, ProductServiceInterface $productService): JsonResponse
     {
-        $validated = $request->validated();
-
-        $products = $productService->getProductsWithStocks(
-            $validated['per_page'] ?? 10,
-            ['name' => $validated['name'] ?? null],
-        );
+        $products = $productService->getProductsWithStocks($request->toDTO());
 
         return response()->json([
             'success' => true,

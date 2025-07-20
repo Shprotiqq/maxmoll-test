@@ -10,7 +10,7 @@ use Illuminate\Http\JsonResponse;
 
 final class ResumeOrderController extends Controller
 {
-    public function __invoke(
+    public function resumeOrder(
         ResumeOrderRequest $request,
         OrderServiceInterface $orderService,
         int $orderId

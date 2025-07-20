@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 
 final class IndexWarehouseController extends Controller
 {
-    public function __invoke(
+    public function getWarehouses(
         GetWarehousesRequest $request,
         WarehouseServiceInterface $warehouseService
     ): JsonResponse {

@@ -11,7 +11,7 @@ use Illuminate\Http\JsonResponse;
 
 final class UpdateOrderController extends Controller
 {
-    public function __invoke(
+    public function updateOrder(
         UpdateOrderRequest $request,
         OrderServiceInterface $orderService,
         int $orderId

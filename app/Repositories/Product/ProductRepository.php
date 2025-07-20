@@ -2,23 +2,25 @@
 
 namespace App\Repositories\Product;
 
+use App\DTOs\FiltersDTO;
 use App\DTOs\Product\ProductStockDTO;
 use App\Models\Product;
 use App\Models\Stock;
 use App\Repositories\Interfaces\Product\ProductRepositoryInterface;
+use Illuminate\Database\Query\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 
 final class ProductRepository implements ProductRepositoryInterface
 {
-
-    public function getProductsWithStocks(int $perPage = 10, array $filters = []): LengthAwarePaginator
+    public function getProductsWithStocks(FiltersDTO $dto): LengthAwarePaginator
     {
-        $query = Product::with(['stocks:product_id,warehouse_id,stock']);
+        $query = Product::query()
+            ->with(['stocks:product_id,warehouse_id,stock']);
 
-        $this->applyFilters($query, $filters);
+        $this->applyFilters($query, $dto);
 
-        $products = $query->paginate($perPage);
+        $products = $query->paginate($dto->perPage);
 
         $products->setCollection(
             $this->transformToProductStockDTO($products->getCollection())
@@ -27,10 +29,10 @@ final class ProductRepository implements ProductRepositoryInterface
         return $products;
     }
 
-    private function applyFilters($query, array $filters): void
+    private function applyFilters(Builder $query, FiltersDTO $dto): void
     {
-        if (!empty($filters['name'])) {
-            $query->where('name', 'like', '%' . $filters['name'] . '%');
+        if (!empty($dto->filters['name'])) {
+            $query->where('name', 'like', '%' . $dto->filters['name'] . '%');
         }
     }
 

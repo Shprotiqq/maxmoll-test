@@ -5,8 +5,6 @@ namespace App\Providers;
 use App\Contracts\Order\OrderServiceInterface;
 use App\Contracts\Product\ProductServiceInterface;
 use App\Contracts\Warehouse\WarehouseServiceInterface;
-use App\Models\Stock;
-use App\Observers\StockObserver;
 use App\Repositories\Interfaces\Order\OrderRepositoryInterface;
 use App\Repositories\Interfaces\Product\ProductRepositoryInterface;
 use App\Repositories\Interfaces\Warehouse\WarehouseRepositoryInterface;
@@ -55,6 +53,6 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        Stock::observe(StockObserver::class);
+
     }
 }

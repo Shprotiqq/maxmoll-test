@@ -9,7 +9,7 @@ use Illuminate\Http\JsonResponse;
 
 final class IndexOrderController extends Controller
 {
-    public function __invoke(GetOrdersRequest $request, OrderServiceInterface $orderService): JsonResponse
+    public function getOrders(GetOrdersRequest $request, OrderServiceInterface $orderService): JsonResponse
     {
         $validated = $request->validated();
 

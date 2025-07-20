@@ -12,19 +12,19 @@ use Illuminate\Support\Facades\Route;
 
 
 Route::prefix('orders')->group(function () {
-    Route::get('/', IndexOrderController::class);
-    Route::post('/', CreateOrderController::class);
-    Route::put('/{orderId}', UpdateOrderController::class);
-    Route::patch('/{orderId}/complete', CompleteOrderController::class);
-    Route::patch('/{orderId}/cancel', CancelOrderController::class);
-    Route::patch('/{orderId}/resume', ResumeOrderController::class);
+    Route::get('/', [IndexOrderController::class, 'getOrders']);
+    Route::post('/', [CreateOrderController::class, 'createOrder']);
+    Route::put('/{orderId}', [UpdateOrderController::class, 'updateOrder']);
+    Route::patch('/{orderId}/complete', [CompleteOrderController::class, 'completeOrder']);
+    Route::patch('/{orderId}/cancel', [CancelOrderController::class, 'cancelOrder']);
+    Route::patch('/{orderId}/resume', [ResumeOrderController::class, 'resumeOrder']);
 });
 
 Route::prefix('products')->group(function () {
-    Route::get('/', IndexProductController::class);
+    Route::get('/', [IndexProductController::class, 'getProducts']);
 });
 
 Route::prefix('warehouses')->group(function () {
-    Route::get('/', IndexWarehouseController::class);
+    Route::get('/', [IndexWarehouseController::class, 'getWarehouses']);
 });
 

@@ -2,7 +2,6 @@
 
 namespace App\Models;
 
-use App\Observers\StockObserver;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -25,13 +24,6 @@ class Stock extends Model
 
     public ?string $operation_type = null;
     public ?string $operation_id = null;
-    public ?string $operation_notes = null;
-
-    public static function boot(): void
-    {
-        parent::boot();
-        static::observe(StockObserver::class);
-    }
 
     public function product(): BelongsTo
     {
