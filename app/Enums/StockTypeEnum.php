@@ -2,7 +2,7 @@
 
 namespace App\Enums;
 
-enum StockOperationType: string
+enum StockTypeEnum: string
 {
     case INITIAL = 'Первоначальный остаток';
     case ORDER_CREATED = 'Заказ создан';

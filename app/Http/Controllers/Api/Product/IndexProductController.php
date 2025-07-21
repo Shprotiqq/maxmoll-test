@@ -11,7 +11,9 @@ final class IndexProductController extends Controller
 {
     public function getProducts(GetWithFiltersRequest $request, ProductServiceInterface $productService): JsonResponse
     {
-        $products = $productService->getProductsWithStocks($request->toDTO());
+        $dto = $request->toDTO();
+
+        $products = $productService->getProductsWithStocks($dto);
 
         return response()->json([
             'success' => true,

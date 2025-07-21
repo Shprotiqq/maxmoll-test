@@ -3,34 +3,39 @@
 namespace App\Http\Controllers\Api\Order;
 
 use App\Contracts\Order\OrderServiceInterface;
-use App\DTOs\Order\CreateOrderDTO;
+use App\Exceptions\NegativeCostException;
+use App\Exceptions\OrderCreationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\CreateOrderRequest;
-use Exception;
 use Illuminate\Http\JsonResponse;
+use Throwable;
 
 final class CreateOrderController extends Controller
 {
     public function createOrder(CreateOrderRequest $request, OrderServiceInterface $orderService): JsonResponse
     {
-        try {
-            $dto = new CreateOrderDTO(
-                customer: $request->input('customer'),
-                warehouse_id: $request->input('warehouse_id'),
-                items: $request->input('items')
-            );
+        $dto = $request->toDTO();
 
+        try {
             $order = $orderService->createOrder($dto);
 
             return response()->json([
                 'success' => true,
-                'data' => $order
+                'data' => $order,
+                'message' => 'Заказ успешно создан'
             ], 201);
-        } catch (Exception $exception) {
+        } catch (OrderCreationException|NegativeCostException $e) {
             return response()->json([
                 'success' => false,
-                'message' => $exception->getMessage()
-            ], 400);
+                'message' => $e->getMessage(),
+                'error_code' => 'UNKNOWN_ERROR'
+            ], 500);
+        } catch (Throwable $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Неизвестная ошибка',
+                'error_code' => 'UNKNOWN_ERROR'
+            ], 500);
         }
     }
 }

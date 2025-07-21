@@ -3,19 +3,20 @@
 namespace App\Services\Order;
 
 use App\Contracts\Order\OrderServiceInterface;
+use App\DTOs\ChangeStockDTO;
+use App\DTOs\GetStockDTO;
 use App\DTOs\Order\CreateOrderDTO;
-use App\DTOs\Order\OrderDTO;
+use App\DTOs\Order\CreateOrderItemDTO;
+use App\DTOs\Order\OrderFilterDTO;
 use App\DTOs\Order\OrderItemDTO;
-use App\DTOs\Order\UpdateOrderDTO;
-use App\Enums\OrderStatus;
-use App\Enums\StockOperationType;
+use App\Enums\StockOperationEnum;
+use App\Exceptions\NegativeCostException;
+use App\Exceptions\OrderCreationException;
 use App\Models\Order;
-use App\Models\OrderItem;
-use App\Models\Stock;
 use App\Repositories\Interfaces\Order\OrderRepositoryInterface;
-use Exception;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
+use Throwable;
 
 final class OrderService implements OrderServiceInterface
 {
@@ -24,235 +25,51 @@ final class OrderService implements OrderServiceInterface
     ) {
     }
 
-    public function getOrders(int $perPage = 10, array $filter = []): LengthAwarePaginator
+    public function getOrders(OrderFilterDTO $dto): LengthAwarePaginator
     {
-        $perPage = max(1, min(100, $perPage));
-
-        return $this->orderRepository->getOrderWithFilters($perPage, $filter);
+        return $this->orderRepository->getOrderWithFilters($dto);
     }
 
-    public function createOrder(CreateOrderDTO $dto): OrderDTO
+    public function createOrder(CreateOrderDTO $dto): Order
     {
-        return DB::transaction(function () use ($dto) {
-            $order = new Order([
-                'customer' => $dto->customer,
-                'warehouse_id' => $dto->warehouse_id,
-                'status' => OrderStatus::ACTIVE->value,
-                'created_at' => now(),
-            ]);
+        try {
+            DB::beginTransaction();
 
-            $order = $this->orderRepository->save($order);
+            $order = $this->orderRepository->createOrder($dto);
 
             foreach ($dto->items as $item) {
-                $this->addOrderItem($order, $item['product_id'], $item['count']);
-            }
-
-            return $this->orderToDTO($order);
-        });
-    }
-
-    public function updateOrder(int $orderId, UpdateOrderDTO $dto): OrderDTO
-    {
-        return DB::transaction(function () use ($orderId, $dto) {
-            $order = $this->orderRepository->findById($orderId);
-
-            if ($order->status->value !== OrderStatus::ACTIVE->value) {
-                throw new Exception('Можно обновлять только активные заказы');
-            }
-
-            if ($dto->customer !== null) {
-                $order->customer = $dto->customer;
-            }
-
-            if ($dto->warehouse_id !== null) {
-                $order->warehouse_id = $dto->warehouse_id;
-            }
-
-            $this->orderRepository->save($order);
-
-            if ($dto->items !== null) {
-                $this->updateOrderItems($order, $dto->items);
-            }
-
-            return $this->orderToDTO($order);
-        });
-    }
-
-    private function addOrderItem(Order $order, int $productId, int $count): void
-    {
-        $stock = Stock::query()
-            ->where('product_id', $productId)
-            ->where('warehouse_id', $order->warehouse_id)
-            ->firstOrFail();
-
-        if ($stock->stock < $count) {
-            throw new Exception("Недостаточно товара {$productId} на складе {$order->warehouse_id}");
-        }
-
-        OrderItem::query()
-            ->create([
-                'order_id' => $order->id,
-                'product_id' => $productId,
-                'count' => $count,
-            ]);
-
-        $stock->operation_type = StockOperationType::ORDER_CREATED->value;
-        $stock->operation_id = $order->id;
-
-        Stock::query()
-            ->where('product_id', $productId)
-            ->decrement('stock', $count);
-    }
-
-    private function updateOrderItems(Order $order, array $newItems): void
-    {
-        $currentItems = $order->items;
-
-        foreach ($currentItems as $item) {
-            $stock = Stock::query()
-                ->where('product_id', $item->product_id)
-                ->where('warehouse_id', $order->warehouse_id)
-                ->first();
-        }
-
-        if ($stock) {
-            $stock->operation_type = StockOperationType::ORDER_CANCELED->value;
-            $stock->operation_id = $order->id;
-
-            Stock::query()
-                ->where('product_id', $stock->id)
-                ->increment('stock', $item->count);
-        }
-
-        $this->orderRepository->deleteItems($order);
-
-        foreach ($newItems as $item) {
-            $this->addOrderItem($order, $item['product_id'], $item['count']);
-        }
-    }
-
-    public function completeOrder(int $orderId): orderDTO
-    {
-        return DB::transaction(function () use ($orderId) {
-            $order = $this->orderRepository->findById($orderId);
-
-            if ($order->status->value !== OrderStatus::ACTIVE->value) {
-                throw new Exception('Можно завершить только активные заказы');
-            }
-
-            $order->status = OrderStatus::COMPLETED->value;
-            $order->completed_at = now();
-
-            return $this->orderToDTO($this->orderRepository->save($order));
-        });
-    }
-
-    public function cancelOrder(int $orderId): OrderDTO
-    {
-        return DB::transaction(function () use ($orderId) {
-            $order = $this->orderRepository->findById($orderId);
-            $order->load('items');
-
-            if ($order->status->value !== OrderStatus::ACTIVE->value) {
-                throw new Exception('Можно отменить только активные заказы');
-            }
-
-            $this->returnItemsToStock($order);
-            $order->status = OrderStatus::CANCELLED->value;
-
-            return $this->orderToDTO($this->orderRepository->save($order));
-        });
-    }
-
-    private function returnItemsToStock(Order $order): void
-    {
-        foreach ($order->items as $item) {
-            $stock = Stock::query()
-                ->where('product_id', $item->product_id)
-                ->where('warehouse_id', $order->warehouse_id)
-                ->first();
-
-            if ($stock) {
-                $stock->operation_type = StockOperationType::ORDER_CANCELED->value;
-                $stock->operation_id = $order->id;
-                $stock->increment('stock', $item->count);
-            }
-        }
-    }
-
-    public function resumeOrder(int $orderId): OrderDTO
-    {
-        return DB::transaction(function () use ($orderId) {
-            $order = $this->orderRepository->findById($orderId);
-            $order->load('items');
-
-            if ($order->status->value !== OrderStatus::CANCELLED->value) {
-                throw new Exception('Можно возобновить только отмененный заказ');
-            }
-
-            $this->checkItemsAvailability($order);
-            $this->reserveItems($order);
-            $order->status = OrderStatus::ACTIVE->value;
-            $order->completed_at = null;
-
-            return $this->orderToDTO($this->orderRepository->save($order));
-        });
-    }
-
-    private function checkItemsAvailability(Order $order): void
-    {
-        foreach ($order->items as $item) {
-            $stock = Stock::query()
-                ->where('product_id', $item->product_id)
-                ->where('warehouse_id', $order->warehouse_id)
-                ->first();
-
-            if (!$stock || $stock->count < $item->count) {
-                throw new Exception(
-                    "Недостаточно товара {$item->product_id} на складе {$order->warehouse_id} для возобновления заказа"
+                $stock = $this->orderRepository->getStock(
+                    new GetStockDTO(
+                        warehouse_id: $dto->warehouse_id,
+                        product_id: $item->product_id
+                    )
                 );
+
+                $changeStockDTO = new ChangeStockDTO(
+                    stockOperation: StockOperationEnum::DECREMENT,
+                    quantity: $item->count,
+                    stock: $stock
+                );
+
+                $this->orderRepository->createOrderItem(new CreateOrderItemDTO(
+                    order_id: $order->id,
+                    product_id: $item->product_id,
+                    count: $item->count
+                ));
+
+                $this->orderRepository->changeStockCount($changeStockDTO);
             }
+            DB::commit();
+
+            return $order;
+        } catch (NegativeCostException $exception) {
+            DB::rollBack();
+            logger()->error($exception);
+            throw $exception;
+        } catch (Throwable $exception) {
+            DB::rollBack();
+            logger()->error($exception);
+            throw OrderCreationException('Произошла ошибка при создании заказа');
         }
-    }
-
-    private function reserveItems(Order $order): void
-    {
-        foreach ($order->items as $item) {
-            $stock = Stock::query()
-                ->where('product_id', $item->product_id)
-                ->where('warehouse_id', $order->warehouse_id)
-                ->first();
-
-            if ($stock) {
-                $stock->operation_type = StockOperationType::ORDER_RESUMED->value;
-                $stock->operation_id = $item->id;
-                $stock->decrement('stock', $item->count);
-            }
-        }
-    }
-
-    private function orderToDTO(Order $order): OrderDTO
-    {
-        $order->load(['warehouse', 'items.product']);
-
-        $items = $order->items->map(function ($item) {
-            return new OrderItemDTO(
-                product_id: $item->product_id,
-                product_name: $item->product->name,
-                product_price: $item->product->price,
-                count: $item->count,
-            );
-        })->toArray();
-
-        return new OrderDTO(
-            id: $order->id,
-            customer: $order->customer,
-            created_at: $order->created_at->toDateTimeString(),
-            completed_at: $order->completed_at?->toDateTimeString(),
-            warehouse_id: $order->warehouse_id,
-            warehouse_name: $order->warehouse->name,
-            status: $order->status->value,
-            items: $items,
-        );
     }
 }

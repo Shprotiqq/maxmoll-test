@@ -3,17 +3,13 @@
 namespace App\Contracts\Order;
 
 use App\DTOs\Order\CreateOrderDTO;
-use App\DTOs\Order\OrderDTO;
-use App\DTOs\Order\UpdateOrderDTO;
+use App\DTOs\Order\OrderFilterDTO;
+use App\Models\Order;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 interface OrderServiceInterface
 {
-    public function getOrders(int $perPage = 10, array $filter = []): LengthAwarePaginator;
-    public function createOrder(CreateOrderDTO $dto): OrderDTO;
-    public function updateOrder(int $orderId, UpdateOrderDTO $dto): OrderDTO;
-    public function completeOrder(int $orderId): OrderDTO;
-    public function cancelOrder(int $orderId): OrderDTO;
-    public function resumeOrder(int $orderId): OrderDTO;
+    public function getOrders(OrderFilterDTO $dto): LengthAwarePaginator;
 
+    public function createOrder(CreateOrderDTO $dto): Order;
 }

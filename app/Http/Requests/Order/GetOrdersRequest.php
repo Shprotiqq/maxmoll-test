@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Order;
 
+use App\DTOs\Order\OrderFilterDTO;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class GetOrdersRequest extends FormRequest
@@ -14,21 +15,34 @@ final class GetOrdersRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'per_page' => 'sometimes|integer|min:1|max:100',
+            'customer' => 'sometimes|string|max:255|exists:orders,customer',
             'status' => 'sometimes|string|in:active,completed,cancelled',
-            'customer' => 'sometimes|string|max:255',
-            'warehouse_id' => 'sometimes|int|exists:warehouses,id|max:255',
+            'warehouse' => 'sometimes|integer|exists:warehouses,name',
             'date_from' => 'sometimes|date',
             'date_to' => 'sometimes|date|after_or_equal:date_from',
+            'per_page' => 'sometimes|integer|min:1|max:100',
         ];
     }
 
     public function messages(): array
     {
         return [
-          'status.in' => 'Указанного статуса не существует',
-          'warehouse_id.exists' => 'Указанный склад не существует',
-          'date_to.after_or_equal' => 'Конечная дата должна быть позже или равна начальной'
+            'customer.exists' => 'Указанный покупатель не найден',
+            'status.in' => 'Указанного статуса не существует',
+            'warehouse.exists' => 'Указанный склад не найден',
+            'date_to.after_or_equal' => 'Конечная дата должна быть позже или равна начальной'
         ];
+    }
+
+    public function toDTO(): OrderFilterDTO
+    {
+        return new OrderFilterDTO(
+            customer: $this->input('customer'),
+            status: $this->input('status'),
+            warehouse: $this->input('warehouse'),
+            dateFrom: $this->input('date_from'),
+            dateTo: $this->input('date_to'),
+            perPage: $this->input('per_page', OrderFilterDTO::DEFAULT_PER_PAGE),
+        );
     }
 }

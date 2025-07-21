@@ -2,84 +2,108 @@
 
 namespace App\Repositories\Order;
 
-use App\DTOs\Order\OrderDTO;
-use App\DTOs\Order\OrderItemDTO;
+use App\DTOs\ChangeStockDTO;
+use App\DTOs\GetStockDTO;
+use App\DTOs\Order\CreateOrderDTO;
+use App\DTOs\Order\CreateOrderItemDTO;
+use App\DTOs\Order\OrderFilterDTO;
+use App\Enums\OrderStatus;
+use App\Enums\StockOperationEnum;
+use App\Exceptions\InvalidChangeStockOperationException;
+use App\Exceptions\NegativeCostException;
 use App\Models\Order;
+use App\Models\OrderItem;
+use App\Models\Stock;
 use App\Repositories\Interfaces;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 final class OrderRepository implements Interfaces\Order\OrderRepositoryInterface
 {
 
-    public function getOrderWithFilters(int $perPage = 10, array $filters = []): LengthAwarePaginator
+    public function getOrderWithFilters(OrderFilterDTO $dto): LengthAwarePaginator
     {
-        $query = Order::with([
-            'warehouse:id,name',
-            'items.product:id,name,price'
+        $query = Order::query()
+            ->with([
+                'warehouse:name',
+                'items.product:id,name,price'
+            ]);
+
+        $this->applyFilters($query, $dto);
+
+        return $query->paginate($dto->per_page);
+    }
+
+    private function applyFilters(Builder $query, OrderFilterDTO $dto): void
+    {
+        if ($dto->customer) {
+            $query->where('customer', 'like', '%' . $dto->customer . '%');
+        }
+
+        if ($dto->status) {
+            $query->where('status', $dto->status);
+        }
+
+        if ($dto->warehouse) {
+            $query->whereHas('warehouse_id', function ($q) use ($dto) {
+                $q->where('name', 'like', '%' . $dto->warehouse . '%');
+            });
+        }
+
+        if ($dto->date_from) {
+            $query->where('created_at', '>=', $dto->date_from);
+        }
+
+        if ($dto->date_to) {
+            $query->where('created_at', '<=', $dto->date_from);
+        }
+    }
+
+
+    public function createOrder(CreateOrderDTO $dto): Order
+    {
+        return Order::query()->create([
+            'customer' => $dto->customer,
+            'warehouse_id' => $dto->warehouse_id,
+            'status' => OrderStatus::ACTIVE->value,
+            'created_at' => now(),
         ]);
+    }
 
-
-        if (!empty($filters['status'])) {
-            $query->where('status', $filters['status']);
-        }
-
-        if (!empty($filters['customer'])) {
-            $query->where('customer', 'like', '%' . $filters['customer'] . '%');
-        }
-
-        if (!empty($filters['warehouse_id'])) {
-            $query->where('warehouse_id', $filters['warehouse_id']);
-        }
-
-        if (!empty($filters['date_from'])) {
-            $query->where('created_at', '>=', $filters['date_from']);
-        }
-
-        if (!empty($filters['date_to'])) {
-            $query->where('created_at', '<=', $filters['date_to']);
-        }
-
-        $orders = $query->orderBy('created_at', 'desc')
-            ->paginate($perPage);
-
-        $orders->getCollection()->transform(function ($order) {
-            $items = $order->items->map(function ($item) {
-                return new OrderItemDTO(
-                    product_id: $item->product_id,
-                    product_name: $item->product->name,
-                    product_price: $item->product->price,
-                    count: $item->count,
-                );
-            })->toArray();
-
-            return new OrderDTO(
-                id: $order->id,
-                customer: $order->customer,
-                created_at: $order->created_at->toDateTimeString(),
-                completed_at: $order->completed_at?->toDateTimeString(),
-                warehouse_id: $order->warehouse_id,
-                warehouse_name: $order->warehouse->name,
-                status: $order->status,
-                items: $items,
+    public function changeStockCount(ChangeStockDTO $dto): void
+    {
+        if ($dto->stockOperation === StockOperationEnum::INCREMENT) {
+            $stock = $dto->stock->stock + $dto->quantity;
+        } elseif ($dto->stockOperation === StockOperationEnum::DECREMENT) {
+            $stock = $dto->stock->stock - $dto->quantity;
+        } else {
+            throw new InvalidChangeStockOperationException(
+                "Операция изменения остатков не поддерживается {$dto->stockOperation->value}"
             );
-        });
+        }
 
-        return $orders;
+        if ($stock < 0) {
+            throw new NegativeCostException('Нет товаров на складе');
+        }
+
+        $dto->stock->update(['stock' => $stock]);
     }
 
-    public function findById(int $orderId): Order
+    public function getStock(GetStockDTO $dto): Stock
     {
-        return Order::with(['items'])->findOrFail($orderId);
+        return Stock::query()
+            ->where('warehouse_id', $dto->warehouse_id)
+            ->where('product_id', $dto->product_id)
+            ->lockForUpdate()
+            ->firstOrFail();
     }
 
-    public function save(Order $order): Order
+    public function createOrderItem(CreateOrderItemDTO $dto): OrderItem
     {
-        $order->save();
-        return $order;
-    }
-
-    public function deleteItems(Order $order): void
-    {
-        $order->items()->delete();
+        return OrderItem::query()->create([
+            'order_id' => $dto->order_id,
+            'product_id' => $dto->product_id,
+            'count' => $dto->count,
+        ]);
     }
 }
