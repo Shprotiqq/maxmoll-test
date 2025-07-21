@@ -69,7 +69,7 @@ final class OrderService implements OrderServiceInterface
         } catch (Throwable $exception) {
             DB::rollBack();
             logger()->error($exception);
-            throw OrderCreationException('Произошла ошибка при создании заказа');
+            throw new OrderCreationException('Произошла ошибка при создании заказа');
         }
     }
 }
