@@ -3,6 +3,8 @@
 namespace App\Http\Controllers\Api\Order;
 
 use App\Contracts\Order\OrderServiceInterface;
+use App\Exceptions\NegativeCostException;
+use App\Exceptions\OrderCreationException;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\CreateOrderRequest;
 use Illuminate\Http\JsonResponse;
