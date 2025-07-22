@@ -12,18 +12,15 @@ return new class extends Migration
             $table->id();
             $table->foreignId('product_id')
                 ->constrained('products')
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
+                ->restrictOnDelete();
             $table->foreignId('warehouse_id')
                 ->constrained('warehouses')
-                ->cascadeOnUpdate()
-                ->cascadeOnDelete();
-            $table->integer('amount');
-            $table->string('operation_type');
-            $table->integer('operation_id')->nullable();
-            $table->text('notes')->nullable();
+                ->restrictOnDelete();
+            $table->integer('stock_before');
+            $table->integer('stock_after');
+            $table->enum('operation', ['increment', 'decrement']);
 
-            $table->timestamps();
+            $table->timestamp('created_at')->useCurrent();
         });
     }
 

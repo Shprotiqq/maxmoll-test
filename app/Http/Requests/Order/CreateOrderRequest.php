@@ -2,6 +2,8 @@
 
 namespace App\Http\Requests\Order;
 
+use App\DTOs\Order\CreateOrderDTO;
+use App\DTOs\Order\OrderItemFormDTO;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class CreateOrderRequest extends FormRequest
@@ -28,5 +30,25 @@ final class CreateOrderRequest extends FormRequest
             'items.min' => 'Заказ должен содержать хотя бы одну позицию',
             'items.*.count.min' => 'Количество товара должно быть не менее 1'
         ];
+    }
+
+    public function toDTO(): CreateOrderDTO
+    {
+        return new CreateOrderDTO(
+            customer: $this->input('customer'),
+            warehouse_id: $this->input('warehouse_id'),
+            items: $this->getOrderItems()
+        );
+    }
+
+    private function getOrderItems(): array
+    {
+        return array_map(
+            fn(array $item) => new OrderItemFormDTO(
+                product_id: $item['product_id'],
+                count: $item['count']
+            ),
+            $this->input('items')
+        );
     }
 }

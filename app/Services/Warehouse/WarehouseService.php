@@ -3,10 +3,11 @@
 namespace App\Services\Warehouse;
 
 use App\Contracts\Warehouse\WarehouseServiceInterface;
+use App\DTOs\FiltersDTO;
 use App\Repositories\Interfaces\Warehouse\WarehouseRepositoryInterface;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-final class WarehouseService implements WarehouseServiceInterface
+final readonly class WarehouseService implements WarehouseServiceInterface
 {
     public function __construct(
         private WarehouseRepositoryInterface $warehouseRepository
@@ -14,10 +15,8 @@ final class WarehouseService implements WarehouseServiceInterface
     {
     }
 
-    public function getWarehousesWithStockInfo(int $perPage = 10, array $filters = []): LengthAwarePaginator
+    public function getWarehousesWithStockInfo(FiltersDTO $dto): LengthAwarePaginator
     {
-        $perPage = max(1, min(100, $perPage));
-
-        return $this->warehouseRepository->getWarehousesWithStockInfo($perPage, $filters);
+        return $this->warehouseRepository->getWarehousesWithStockInfo($dto);
     }
 }

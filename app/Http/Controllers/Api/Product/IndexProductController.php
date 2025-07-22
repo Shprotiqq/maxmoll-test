@@ -4,19 +4,16 @@ namespace App\Http\Controllers\Api\Product;
 
 use App\Contracts\Product\ProductServiceInterface;
 use App\Http\Controllers\Controller;
-use App\Http\Requests\Product\GetProductsRequest;
+use App\Http\Requests\GetWithFiltersRequest;
 use Illuminate\Http\JsonResponse;
 
 final class IndexProductController extends Controller
 {
-    public function __invoke(GetProductsRequest $request, ProductServiceInterface $productService): JsonResponse
+    public function getProducts(GetWithFiltersRequest $request, ProductServiceInterface $productService): JsonResponse
     {
-        $validated = $request->validated();
+        $dto = $request->toDTO();
 
-        $products = $productService->getProductsWithStocks(
-            $validated['per_page'] ?? 10,
-            ['name' => $validated['name'] ?? null],
-        );
+        $products = $productService->getProductsWithStocks($dto);
 
         return response()->json([
             'success' => true,

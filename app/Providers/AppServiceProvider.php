@@ -4,17 +4,19 @@ namespace App\Providers;
 
 use App\Contracts\Order\OrderServiceInterface;
 use App\Contracts\Product\ProductServiceInterface;
+use App\Contracts\StockMovement\StockMovementServiceInterface;
 use App\Contracts\Warehouse\WarehouseServiceInterface;
-use App\Models\Stock;
-use App\Observers\StockObserver;
 use App\Repositories\Interfaces\Order\OrderRepositoryInterface;
 use App\Repositories\Interfaces\Product\ProductRepositoryInterface;
+use App\Repositories\Interfaces\StockMovement\StockMovementRepositoryInterface;
 use App\Repositories\Interfaces\Warehouse\WarehouseRepositoryInterface;
 use App\Repositories\Order\OrderRepository;
 use App\Repositories\Product\ProductRepository;
+use App\Repositories\StockMovement\StockMovementRepository;
 use App\Repositories\Warehouse\WarehouseRepository;
 use App\Services\Order\OrderService;
 use App\Services\Product\ProductService;
+use App\Services\StockMovement\StockMovementService;
 use App\Services\Warehouse\WarehouseService;
 use Illuminate\Support\ServiceProvider;
 
@@ -51,10 +53,19 @@ class AppServiceProvider extends ServiceProvider
             OrderRepositoryInterface::class,
             OrderRepository::class
         );
+
+        $this->app->bind(
+            StockMovementServiceInterface::class,
+            StockMovementService::class
+        );
+
+        $this->app->bind(
+            StockMovementRepositoryInterface::class,
+            StockMovementRepository::class
+        );
     }
 
     public function boot(): void
     {
-        Stock::observe(StockObserver::class);
     }
 }

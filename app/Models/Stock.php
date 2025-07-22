@@ -2,36 +2,24 @@
 
 namespace App\Models;
 
-use App\Observers\StockObserver;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Stock extends Model
 {
     protected $table = 'stocks';
-    protected $primaryKey = [
-        'product_id',
-        'warehouse_id'
-    ];
-
-    public $incrementing = false;
     public $timestamps = false;
+
+    protected $primaryKey = ['product_id', 'warehouse_id'];
+    public $incrementing = false;
+
 
     protected $fillable = [
         'product_id',
         'warehouse_id',
         'stock'
     ];
-
-    public ?string $operation_type = null;
-    public ?string $operation_id = null;
-    public ?string $operation_notes = null;
-
-    public static function boot(): void
-    {
-        parent::boot();
-        static::observe(StockObserver::class);
-    }
 
     public function product(): BelongsTo
     {
@@ -41,5 +29,32 @@ class Stock extends Model
     public function warehouse(): BelongsTo
     {
         return $this->belongsTo(Warehouse::class);
+    }
+
+    protected function setKeysForSaveQuery($query): Builder
+    {
+        $keys = $this->getKeyName();
+        if (!is_array($keys)) {
+            return parent::setKeysForSaveQuery($query);
+        }
+
+        foreach ($keys as $keyName) {
+            $query->where($keyName, '=', $this->getKeyForSaveQuery($keyName));
+        }
+
+        return $query;
+    }
+
+    protected function getKeyForSaveQuery($keyName = null)
+    {
+        if (is_null($keyName)) {
+            $keyName = $this->getKeyName();
+        }
+
+        if (isset($this->original[$keyName])) {
+            return $this->original[$keyName];
+        }
+
+        return $this->getAttribute($keyName);
     }
 }

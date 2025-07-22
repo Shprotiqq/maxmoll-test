@@ -9,20 +9,11 @@ use Illuminate\Http\JsonResponse;
 
 final class IndexOrderController extends Controller
 {
-    public function __invoke(GetOrdersRequest $request, OrderServiceInterface $orderService): JsonResponse
+    public function getOrders(GetOrdersRequest $request, OrderServiceInterface $orderService): JsonResponse
     {
-        $validated = $request->validated();
+        $dto = $request->toDTO();
 
-        $orders = $orderService->getOrders(
-            $validated['per_page'] ?? 10,
-            [
-                'status' => $validated['status'] ?? null,
-                'customer' => $validated['customer'] ?? null,
-                'warehouse_id' => $validated['warehouse_id'] ?? null,
-                'date_from' => $validated['date_from'] ?? null,
-                'date_to' => $validated['date_to'] ?? null,
-            ]
-        );
+        $orders = $orderService->getOrders($dto);
 
         return response()->json([
             'success' => true,

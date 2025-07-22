@@ -2,9 +2,10 @@
 
 namespace App\Contracts\Warehouse;
 
+use App\DTOs\FiltersDTO;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 interface WarehouseServiceInterface
 {
-    public function getWarehousesWithStockInfo(int $perPage = 10): LengthAwarePaginator;
+    public function getWarehousesWithStockInfo(FiltersDTO $dto): LengthAwarePaginator;
 }

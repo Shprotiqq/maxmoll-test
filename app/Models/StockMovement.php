@@ -9,13 +9,15 @@ class StockMovement extends Model
 {
     protected $table = 'stock_movements';
 
+    public $timestamps = false;
+
     protected $fillable = [
         'product_id',
         'warehouse_id',
-        'amount',
-        'operation_type',
-        'operation_id',
-        'notes'
+        'stock_before',
+        'stock_after',
+        'operation',
+        'created_at',
     ];
 
     public function product(): BelongsTo
