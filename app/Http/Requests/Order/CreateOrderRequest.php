@@ -41,7 +41,7 @@ final class CreateOrderRequest extends FormRequest
         );
     }
 
-    public function getOrderItems(): array
+    private function getOrderItems(): array
     {
         return array_map(
             fn(array $item) => new OrderItemFormDTO(

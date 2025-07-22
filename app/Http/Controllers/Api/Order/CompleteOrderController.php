@@ -5,29 +5,20 @@ namespace App\Http\Controllers\Api\Order;
 use App\Contracts\Order\OrderServiceInterface;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\CompleteOrderRequest;
-use Exception;
 use Illuminate\Http\JsonResponse;
 
 final class CompleteOrderController extends Controller
 {
-    public function completeOrder(
-        CompleteOrderRequest $request,
-        OrderServiceInterface $orderService,
-        int $orderID
-    ): JsonResponse
+    public function completeOrder(CompleteOrderRequest $request, OrderServiceInterface $orderService): JsonResponse
     {
-        try {
-            $order = $orderService->completeOrder($orderID);
+        $dto = $request->toDTO();
 
-            return response()->json([
-                'success' => true,
-                'data' => $order,
-            ]);
-        } catch (Exception $exception) {
-            return response()->json([
-                'success' => false,
-                'message' => $exception->getMessage(),
-            ], 400);
-        }
+        $order = $orderService->completeOrder($dto);
+
+        return response()->json([
+            'success' => true,
+            'data' => $order,
+            'message' => 'Заказ успешно завершен',
+        ]);
     }
 }

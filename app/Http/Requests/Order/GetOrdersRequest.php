@@ -40,9 +40,9 @@ final class GetOrdersRequest extends FormRequest
             customer: $this->input('customer'),
             status: $this->input('status'),
             warehouse: $this->input('warehouse'),
-            dateFrom: $this->input('date_from'),
-            dateTo: $this->input('date_to'),
-            perPage: $this->input('per_page', OrderFilterDTO::DEFAULT_PER_PAGE),
+            date_from: $this->input('date_from'),
+            date_to: $this->input('date_to'),
+            per_page: $this->input('per_page', OrderFilterDTO::DEFAULT_PER_PAGE),
         );
     }
 }

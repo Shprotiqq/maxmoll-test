@@ -2,12 +2,10 @@
 
 namespace App\DTOs\Order;
 
-final readonly class UpdateOrderDTO
+final readonly class CancelOrderDTO
 {
     public function __construct(
         public int $order_id,
-        public string $customer,
-        public array $items
     )
     {
     }

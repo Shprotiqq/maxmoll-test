@@ -14,27 +14,16 @@ final class UpdateOrderController extends Controller
     public function updateOrder(
         UpdateOrderRequest $request,
         OrderServiceInterface $orderService,
-        int $orderId
     ): JsonResponse
     {
-        try {
-            $dto = new UpdateOrderDto(
-                customer: $request->input('customer'),
-                warehouse_id: $request->input('warehouse_id'),
-                items: $request->input('items')
-            );
+            $dto =  $request->toDTO();
 
-            $order = $orderService->updateOrder($orderId, $dto);
+            $order = $orderService->updateOrder($dto);
 
             return response()->json([
                 'success' => true,
                 'data' => $order,
             ]);
-        } catch (Exception $exception) {
-            return response()->json([
-                'success' => false,
-                'message' => $exception->getMessage(),
-            ], 400);
-        }
+
     }
 }
