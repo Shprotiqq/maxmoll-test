@@ -20,6 +20,5 @@ final class CreateOrderController extends Controller
             'data' => $order,
             'message' => 'Заказ успешно создан'
         ], 201);
-
     }
 }

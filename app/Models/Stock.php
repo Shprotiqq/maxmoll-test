@@ -34,11 +34,11 @@ class Stock extends Model
     protected function setKeysForSaveQuery($query): Builder
     {
         $keys = $this->getKeyName();
-        if(!is_array($keys)){
+        if (!is_array($keys)) {
             return parent::setKeysForSaveQuery($query);
         }
 
-        foreach($keys as $keyName){
+        foreach ($keys as $keyName) {
             $query->where($keyName, '=', $this->getKeyForSaveQuery($keyName));
         }
 
@@ -47,7 +47,7 @@ class Stock extends Model
 
     protected function getKeyForSaveQuery($keyName = null)
     {
-        if(is_null($keyName)){
+        if (is_null($keyName)) {
             $keyName = $this->getKeyName();
         }
 

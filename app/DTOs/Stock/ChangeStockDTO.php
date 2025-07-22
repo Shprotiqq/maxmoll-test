@@ -1,6 +1,6 @@
 <?php
 
-namespace App\DTOs;
+namespace App\DTOs\Stock;
 
 use App\Enums\StockOperationEnum;
 use App\Models\Stock;

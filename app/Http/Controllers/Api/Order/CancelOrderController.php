@@ -10,11 +10,10 @@ use Illuminate\Http\JsonResponse;
 final class CancelOrderController extends Controller
 {
     public function cancelOrder(
-        CancelOrderRequest    $request,
+        CancelOrderRequest $request,
         OrderServiceInterface $orderService,
     ): JsonResponse
     {
-
         $dto = $request->toDTO();
 
         $order = $orderService->cancelOrder($dto);

@@ -3,10 +3,8 @@
 namespace App\Http\Controllers\Api\Order;
 
 use App\Contracts\Order\OrderServiceInterface;
-use App\DTOs\Order\UpdateOrderDTO;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Order\UpdateOrderRequest;
-use Exception;
 use Illuminate\Http\JsonResponse;
 
 final class UpdateOrderController extends Controller
@@ -16,14 +14,13 @@ final class UpdateOrderController extends Controller
         OrderServiceInterface $orderService,
     ): JsonResponse
     {
-            $dto =  $request->toDTO();
+        $dto = $request->toDTO();
 
-            $order = $orderService->updateOrder($dto);
+        $order = $orderService->updateOrder($dto);
 
-            return response()->json([
-                'success' => true,
-                'data' => $order,
-            ]);
-
+        return response()->json([
+            'success' => true,
+            'data' => $order,
+        ]);
     }
 }

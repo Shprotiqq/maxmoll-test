@@ -2,7 +2,7 @@
 
 namespace App\DTOs\Order;
 
-class OrderFilterDTO
+final readonly class OrderFilterDTO
 {
     public const DEFAULT_PER_PAGE = 10;
 

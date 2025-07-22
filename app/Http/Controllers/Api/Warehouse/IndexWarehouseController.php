@@ -12,7 +12,8 @@ final class IndexWarehouseController extends Controller
     public function getWarehouses(
         GetWithFiltersRequest $request,
         WarehouseServiceInterface $warehouseService
-    ): JsonResponse {
+    ): JsonResponse
+    {
         $dto = $request->toDTO();
 
         $warehouses = $warehouseService->getWarehousesWithStockInfo($dto);

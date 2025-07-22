@@ -3,15 +3,15 @@
 namespace App\Services\Order;
 
 use App\Contracts\Order\OrderServiceInterface;
-use App\DTOs\ChangeStockDTO;
-use App\DTOs\GetStockDTO;
 use App\DTOs\Order\CancelOrderDTO;
+use App\DTOs\Order\CompleteOrderDTO;
 use App\DTOs\Order\CreateOrderDTO;
 use App\DTOs\Order\CreateOrderItemDTO;
-use App\DTOs\Order\CompleteOrderDTO;
 use App\DTOs\Order\OrderFilterDTO;
 use App\DTOs\Order\ResumeOrderDTO;
 use App\DTOs\Order\UpdateOrderDTO;
+use App\DTOs\Stock\ChangeStockDTO;
+use App\DTOs\Stock\GetStockDTO;
 use App\Enums\StockOperationEnum;
 use App\Exceptions\NegativeCostException;
 use App\Exceptions\OrderCancelException;
@@ -25,7 +25,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
-final class OrderService implements OrderServiceInterface
+final readonly class OrderService implements OrderServiceInterface
 {
     public function __construct(
         private OrderRepositoryInterface $orderRepository,

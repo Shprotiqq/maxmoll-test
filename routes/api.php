@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\Order\IndexOrderController;
 use App\Http\Controllers\Api\Order\ResumeOrderController;
 use App\Http\Controllers\Api\Order\UpdateOrderController;
 use App\Http\Controllers\Api\Product\IndexProductController;
+use App\Http\Controllers\Api\StockMovement\GetStockMovementController;
 use App\Http\Controllers\Api\Warehouse\IndexWarehouseController;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +19,10 @@ Route::prefix('orders')->group(function () {
     Route::patch('/{orderId}/complete', [CompleteOrderController::class, 'completeOrder']);
     Route::patch('/{orderId}/cancel', [CancelOrderController::class, 'cancelOrder']);
     Route::patch('/{orderId}/resume', [ResumeOrderController::class, 'resumeOrder']);
+});
+
+Route::prefix('stock-movements')->group(function () {
+   Route::get('/', [GetStockMovementController::class, 'getListStockMovements']);
 });
 
 Route::prefix('products')->group(function () {

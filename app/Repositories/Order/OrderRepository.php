@@ -2,8 +2,6 @@
 
 namespace App\Repositories\Order;
 
-use App\DTOs\ChangeStockDTO;
-use App\DTOs\GetStockDTO;
 use App\DTOs\Order\CancelOrderDTO;
 use App\DTOs\Order\CompleteOrderDTO;
 use App\DTOs\Order\CreateOrderDTO;
@@ -11,6 +9,8 @@ use App\DTOs\Order\CreateOrderItemDTO;
 use App\DTOs\Order\OrderFilterDTO;
 use App\DTOs\Order\ResumeOrderDTO;
 use App\DTOs\Order\UpdateOrderDTO;
+use App\DTOs\Stock\ChangeStockDTO;
+use App\DTOs\Stock\GetStockDTO;
 use App\Enums\OrderStatus;
 use App\Enums\StockOperationEnum;
 use App\Exceptions\InvalidChangeStockOperationException;
@@ -22,11 +22,17 @@ use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Stock;
 use App\Repositories\Interfaces;
+use App\Repositories\Interfaces\StockMovement\StockMovementRepositoryInterface;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator;
 
-final class OrderRepository implements Interfaces\Order\OrderRepositoryInterface
+final readonly class OrderRepository implements Interfaces\Order\OrderRepositoryInterface
 {
+    public function __construct(
+        private StockMovementRepositoryInterface $stockMovementRepository,
+    )
+    {
+    }
 
     public function getOrderWithFilters(OrderFilterDTO $dto): LengthAwarePaginator
     {
@@ -98,16 +104,20 @@ final class OrderRepository implements Interfaces\Order\OrderRepositoryInterface
 
         foreach ($currentItems as $productId => $currentItem) {
             if (!isset($newItems[$productId])) {
-                $stock = $this->getStockForUpdate(new GetStockDTO(
-                    warehouse_id: $order->warehouse_id,
-                    product_id: $productId
-                ));
+                $stock = $this->getStockForUpdate(
+                    new GetStockDTO(
+                        warehouse_id: $order->warehouse_id,
+                        product_id: $productId
+                    )
+                );
 
-                $this->changeStockCount(new ChangeStockDTO(
-                    stockOperation: StockOperationEnum::INCREMENT,
-                    quantity: $currentItem['count'],
-                    stock: $stock
-                ));
+                $this->changeStockCount(
+                    new ChangeStockDTO(
+                        stockOperation: StockOperationEnum::INCREMENT,
+                        quantity: $currentItem['count'],
+                        stock: $stock
+                    )
+                );
 
                 OrderItem::query()
                     ->where('id', $productId)
@@ -116,10 +126,12 @@ final class OrderRepository implements Interfaces\Order\OrderRepositoryInterface
         }
 
         foreach ($newItems as $productId => $item) {
-            $stock = $this->getStockForUpdate(new GetStockDTO(
-                warehouse_id: $order->warehouse_id,
-                product_id: $item->product_id,
-            ));
+            $stock = $this->getStockForUpdate(
+                new GetStockDTO(
+                    warehouse_id: $order->warehouse_id,
+                    product_id: $item->product_id,
+                )
+            );
 
             if (isset($currentItems[$productId])) {
                 $quantityDiff = $item->count - $currentItems[$productId]['count'];
@@ -129,11 +141,13 @@ final class OrderRepository implements Interfaces\Order\OrderRepositoryInterface
                         ? StockOperationEnum::DECREMENT
                         : StockOperationEnum::INCREMENT;
 
-                    $this->changeStockCount(new ChangeStockDTO(
-                        stockOperation: $operation,
-                        quantity: abs($quantityDiff),
-                        stock: $stock
-                    ));
+                    $this->changeStockCount(
+                        new ChangeStockDTO(
+                            stockOperation: $operation,
+                            quantity: abs($quantityDiff),
+                            stock: $stock
+                        )
+                    );
 
                     OrderItem::query()
                         ->where('id', $currentItems[$productId]['id'])
@@ -142,23 +156,29 @@ final class OrderRepository implements Interfaces\Order\OrderRepositoryInterface
                         ]);
                 }
             } else {
-                $this->changeStockCount(new ChangeStockDTO(
-                    stockOperation: StockOperationEnum::DECREMENT,
-                    quantity: $item->count,
-                    stock: $stock
-                ));
+                $this->changeStockCount(
+                    new ChangeStockDTO(
+                        stockOperation: StockOperationEnum::DECREMENT,
+                        quantity: $item->count,
+                        stock: $stock
+                    )
+                );
 
-                $this->createOrderItem(new CreateOrderItemDTO(
-                    order_id: $order->id,
-                    product_id: $item->product_id,
-                    count: $item->count,
-                ));
+                $this->createOrderItem(
+                    new CreateOrderItemDTO(
+                        order_id: $order->id,
+                        product_id: $item->product_id,
+                        count: $item->count,
+                    )
+                );
             }
         }
     }
 
     public function changeStockCount(ChangeStockDTO $dto): void
     {
+        $stock_before = $dto->stock->stock;
+
         if ($dto->stockOperation === StockOperationEnum::INCREMENT) {
             $stock = $dto->stock->stock + $dto->quantity;
         } elseif ($dto->stockOperation === StockOperationEnum::DECREMENT) {
@@ -174,6 +194,16 @@ final class OrderRepository implements Interfaces\Order\OrderRepositoryInterface
         }
 
         $dto->stock->update(['stock' => $stock]);
+
+        $stock_after = $dto->stock->stock;
+
+        $this->stockMovementRepository->createStockMovement(
+            product_id: $dto->stock->product_id,
+            warehouse_id: $dto->stock->warehouse_id,
+            stock_before: $stock_before,
+            stock_after: $stock_after,
+            operation: $dto->stockOperation->value,
+        );
     }
 
     public function createOrderItem(CreateOrderItemDTO $dto): OrderItem
@@ -196,7 +226,8 @@ final class OrderRepository implements Interfaces\Order\OrderRepositoryInterface
         }
 
         $order->update([
-            'status', OrderStatus::COMPLETED->value,
+            'status',
+            OrderStatus::COMPLETED->value,
         ]);
 
         return $order;
@@ -220,16 +251,20 @@ final class OrderRepository implements Interfaces\Order\OrderRepositoryInterface
         $order->update(['status' => OrderStatus::CANCELLED->value]);
 
         foreach ($order->items as $item) {
-            $stock = $this->getStockForUpdate(new GetStockDTO(
-                warehouse_id: $order->warehouse_id,
-                product_id: $item->product_id,
-            ));
+            $stock = $this->getStockForUpdate(
+                new GetStockDTO(
+                    warehouse_id: $order->warehouse_id,
+                    product_id: $item->product_id,
+                )
+            );
 
-            $this->changeStockCount(new ChangeStockDTO(
-                stockOperation: StockOperationEnum::INCREMENT,
-                quantity: $item->count,
-                stock: $stock
-            ));
+            $this->changeStockCount(
+                new ChangeStockDTO(
+                    stockOperation: StockOperationEnum::INCREMENT,
+                    quantity: $item->count,
+                    stock: $stock
+                )
+            );
         }
 
         return $order->fresh(['items.product']);
@@ -247,10 +282,12 @@ final class OrderRepository implements Interfaces\Order\OrderRepositoryInterface
         }
 
         foreach ($order->items as $item) {
-            $stock = $this->getStock(new GetStockDTO(
-                warehouse_id: $order->warehouse_id,
-                product_id: $item->product_id,
-            ));
+            $stock = $this->getStock(
+                new GetStockDTO(
+                    warehouse_id: $order->warehouse_id,
+                    product_id: $item->product_id,
+                )
+            );
 
             if ($stock->stock < $item->count) {
                 throw new NegativeCostException('Недостаточно товара для возобновления заказа');
@@ -258,16 +295,20 @@ final class OrderRepository implements Interfaces\Order\OrderRepositoryInterface
         }
 
         foreach ($order->items as $item) {
-            $stock = $this->getStockForUpdate(new GetStockDTO(
-                warehouse_id: $order->warehouse_id,
-                product_id: $item->product_id,
-            ));
+            $stock = $this->getStockForUpdate(
+                new GetStockDTO(
+                    warehouse_id: $order->warehouse_id,
+                    product_id: $item->product_id,
+                )
+            );
 
-            $this->changeStockCount(new ChangeStockDTO(
-                stockOperation: StockOperationEnum::DECREMENT,
-                quantity: $item->count,
-                stock: $stock
-            ));
+            $this->changeStockCount(
+                new ChangeStockDTO(
+                    stockOperation: StockOperationEnum::DECREMENT,
+                    quantity: $item->count,
+                    stock: $stock
+                )
+            );
         }
 
         $order->update(['status' => OrderStatus::ACTIVE->value]);
