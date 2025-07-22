@@ -6,6 +6,11 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Класс Stock
+ *
+ * Модель для работы с остатками в таблице stocks.
+ */
 class Stock extends Model
 {
     protected $table = 'stocks';

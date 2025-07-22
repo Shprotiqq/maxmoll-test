@@ -5,6 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
+/**
+ * Класс StockMovement
+ *
+ * Модель для работы с историями операций в исторической таблице stock_movements.
+ */
 class StockMovement extends Model
 {
     protected $table = 'stock_movements';

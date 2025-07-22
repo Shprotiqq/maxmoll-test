@@ -7,6 +7,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+
+/**
+ * Класс Order
+ *
+ * Модель для работы с заказами в таблице orders.
+ */
 class Order extends Model
 {
     protected $table = 'orders';

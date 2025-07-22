@@ -5,7 +5,12 @@ namespace App\Http\Requests;
 use App\DTOs\FiltersDTO;
 use Illuminate\Foundation\Http\FormRequest;
 
-class GetWithFiltersRequest extends FormRequest
+/**
+ * Класс GetWithFiltersRequest
+ *
+ * Форма запроса для валидации данных при получении списков сущностей с фильтрами и пагинацией.
+ */
+final class GetWithFiltersRequest extends FormRequest
 {
     public function authorize(): bool
     {
@@ -33,15 +38,20 @@ class GetWithFiltersRequest extends FormRequest
     protected function prepareForValidation(): void
     {
         $this->merge([
-            'per_page' => $this->input('perPage', FiltersDTO::DEFAULT_PER_PAGE),
+            'per_page' => $this->input('per_page', FiltersDTO::DEFAULT_PER_PAGE),
             'filters' => $this->input('filters', []),
         ]);
     }
 
+    /**
+     * Преобразует данные запроса в DTO для фильтрации и пагинации.
+     *
+     * @return FiltersDTO Объект с данными фильтрации и пагинации.
+     */
     public function toDTO(): FiltersDTO
     {
         return new FiltersDTO(
-            perPage: $this->input('perPage', FiltersDTO::DEFAULT_PER_PAGE),
+            per_page: $this->input('per_page', FiltersDTO::DEFAULT_PER_PAGE),
             filters: $this->input('filters', []),
         );
     }

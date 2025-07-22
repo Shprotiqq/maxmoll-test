@@ -25,19 +25,41 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
+/**
+ * Сервис класс OrderService
+ *
+ * Реализует сервис для управления заказами, включая создание, обновление, завершение,
+ * отмену и возобновление заказов, а также получение списка заказов с фильтрацией.
+ */
 final readonly class OrderService implements OrderServiceInterface
 {
+    /**
+     * @param OrderRepositoryInterface $orderRepository Репозиторий для работы с заказами.
+     */
     public function __construct(
         private OrderRepositoryInterface $orderRepository,
-    )
-    {
+    ) {
     }
 
+    /**
+     * Получает список заказов с применением фильтров и пагинацией.
+     *
+     * @param OrderFilterDTO $dto Объект DTO с параметрами фильтрации (клиент, статус, склад, даты).
+     * @return LengthAwarePaginator Пагинированный список заказов с подгруженными связями.
+     */
     public function getOrders(OrderFilterDTO $dto): LengthAwarePaginator
     {
         return $this->orderRepository->getOrderWithFilters($dto);
     }
 
+    /**
+     * Создаёт новый заказ и связанные с ним позиции, обновляя остатки на складе.
+     *
+     * @param CreateOrderDTO $dto Объект DTO с данными для создания заказа (клиент, склад, позиции).
+     * @return Order Созданная модель заказа.
+     * @throws NegativeCostException Если на складе недостаточно товаров для списания.
+     * @throws OrderCreationException Если произошла ошибка при создании заказа.
+     */
     public function createOrder(CreateOrderDTO $dto): Order
     {
         try {
@@ -67,6 +89,7 @@ final readonly class OrderService implements OrderServiceInterface
 
                 $this->orderRepository->changeStockCount($changeStockDTO);
             }
+
             DB::commit();
 
             return $order;
@@ -81,6 +104,13 @@ final readonly class OrderService implements OrderServiceInterface
         }
     }
 
+    /**
+     * Обновляет существующий заказ, включая его позиции и, при необходимости, остатки на складе.
+     *
+     * @param UpdateOrderDTO $dto Объект DTO с данными для обновления заказа (идентификатор, клиент, позиции).
+     * @return Order Обновлённая модель заказа.
+     * @throws OrderUpdateException Если заказ не найден или обновление невозможно.
+     */
     public function updateOrder(UpdateOrderDTO $dto): Order
     {
         try {
@@ -95,14 +125,20 @@ final readonly class OrderService implements OrderServiceInterface
             DB::rollBack();
             logger()->error($exception);
             throw $exception;
-        }
-        catch (Throwable $exception) {
+        } catch (Throwable $exception) {
             DB::rollBack();
             logger()->error($exception);
             throw new OrderUpdateException('Произошла ошибка при обновлении заказа');
         }
     }
 
+    /**
+     * Завершает заказ, устанавливая статус 'completed' и дату завершения.
+     *
+     * @param CompleteOrderDTO $dto Объект DTO с идентификатором заказа.
+     * @return Order Завершённая модель заказа.
+     * @throws OrderCompleteException Если заказ уже завершён или не является активным.
+     */
     public function completeOrder(CompleteOrderDTO $dto): Order
     {
         try {
@@ -117,14 +153,20 @@ final readonly class OrderService implements OrderServiceInterface
             DB::rollBack();
             logger()->error($exception);
             throw $exception;
-        }
-        catch (Throwable $exception) {
+        } catch (Throwable $exception) {
             DB::rollBack();
             logger()->error($exception);
             throw new OrderCompleteException('Произошла ошибка при завершении заказа');
         }
     }
 
+    /**
+     * Отменяет заказ, возвращая товары на склад и устанавливая статус 'canceled'.
+     *
+     * @param CancelOrderDTO $dto Объект DTO с идентификатором заказа.
+     * @return Order Отменённая модель заказа.
+     * @throws OrderCancelException Если заказ не найден или отмена невозможна.
+     */
     public function cancelOrder(CancelOrderDTO $dto): Order
     {
         try {
@@ -139,13 +181,20 @@ final readonly class OrderService implements OrderServiceInterface
             DB::rollBack();
             logger()->error($exception);
             throw $exception;
-        } catch (Throwable $exception){
+        } catch (Throwable $exception) {
             DB::rollBack();
             logger()->error($exception);
-            throw new OrderCancelException('Произошла ошибкка при отмене заказа');
+            throw new OrderCancelException('Произошла ошибка при отмене заказа'); // Исправлено: было 'ошибкка'
         }
     }
 
+    /**
+     * Возобновляет отменённый заказ, списывая товары со склада и устанавливая статус 'active'.
+     *
+     * @param ResumeOrderDTO $dto Объект DTO с идентификатором заказа.
+     * @return Order Возобновлённая модель заказа.
+     * @throws OrderResumeException Если заказ не найден или возобновление невозможно.
+     */
     public function resumeOrder(ResumeOrderDTO $dto): Order
     {
         try {

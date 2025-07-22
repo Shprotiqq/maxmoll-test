@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Класс Product
+ *
+ * Модель для работы с продуктами в таблице products.
+ */
 class Product extends Model
 {
     use HasFactory;

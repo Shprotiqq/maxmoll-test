@@ -5,6 +5,11 @@ namespace App\Http\Requests\StockMovement;
 use App\DTOs\StockMovement\ListStockMovementDTO;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Класс ListStockMovementsRequest
+ *
+ * Форма запроса для валидации данных при получении списка движений товаров с фильтрами и пагинацией.
+ */
 class ListStockMovementsRequest extends FormRequest
 {
     public function authorize(): bool
@@ -22,6 +27,11 @@ class ListStockMovementsRequest extends FormRequest
         ];
     }
 
+    /**
+     * Преобразует данные запроса в DTO для фильтрации движений товаров.
+     *
+     * @return ListStockMovementDTO Объект с данными фильтрации и пагинации.
+     */
     public function getDTO(): ListStockMovementDTO
     {
         return new ListStockMovementDTO(

@@ -7,6 +7,11 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * Класс Warehouse
+ *
+ * Модель для работы со складами в таблице warehouses.
+ */
 class Warehouse extends Model
 {
     use HasFactory;

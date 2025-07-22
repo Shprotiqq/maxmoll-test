@@ -6,6 +6,11 @@ use App\DTOs\Order\OrderItemFormDTO;
 use App\DTOs\Order\UpdateOrderDTO;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Класс UpdateOrderRequest
+ *
+ * Форма запроса для валидации данных при обновлении заказа.
+ */
 final class UpdateOrderRequest extends FormRequest
 {
     public function authorize(): bool
@@ -33,6 +38,11 @@ final class UpdateOrderRequest extends FormRequest
         ];
     }
 
+    /**
+     * Преобразует данные запроса в DTO для обновления заказа.
+     *
+     * @return UpdateOrderDTO Объект с данными для обновления заказа.
+     */
     public function toDTO(): UpdateOrderDTO
     {
         return new UpdateOrderDTO(
@@ -42,6 +52,11 @@ final class UpdateOrderRequest extends FormRequest
         );
     }
 
+    /**
+     * Преобразует массив позиций заказа в массив DTO.
+     *
+     * @return array Массив объектов OrderItemFormDTO для позиций заказа.
+     */
     private function getOrderItems(): array
     {
         return array_map(
@@ -49,7 +64,7 @@ final class UpdateOrderRequest extends FormRequest
                 product_id: $item['product_id'],
                 count: $item['count']
             ),
-            $this->input('items')
+            $this->input('items', [])
         );
     }
 }

@@ -5,6 +5,11 @@ namespace App\Http\Requests\Order;
 use App\DTOs\Order\OrderFilterDTO;
 use Illuminate\Foundation\Http\FormRequest;
 
+/**
+ * Класс GetOrdersRequest
+ *
+ * Форма запроса для валидации данных при получении списка заказов с фильтрами и пагинацией.
+ */
 final class GetOrdersRequest extends FormRequest
 {
     public function authorize(): bool
@@ -34,8 +39,14 @@ final class GetOrdersRequest extends FormRequest
         ];
     }
 
+    /**
+     * Преобразует данные запроса в DTO для фильтрации заказов.
+     *
+     * @return OrderFilterDTO Объект с данными фильтрации и пагинации.
+     */
     public function toDTO(): OrderFilterDTO
     {
+        // Создание DTO с параметрами фильтрации и пагинации, с использованием значения по умолчанию для per_page
         return new OrderFilterDTO(
             customer: $this->input('customer'),
             status: $this->input('status'),
